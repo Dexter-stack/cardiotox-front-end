@@ -11,16 +11,18 @@ interface CreateLinkModalProps {
 
 export function CreateLinkModal({ onClose }: CreateLinkModalProps) {
   const qc = useQueryClient()
-  const [description, setDescription] = useState('')
-  const [expiresHours, setExpiresHours] = useState('')
+  const [label, setLabel] = useState('')
+  const [expiresHours, setExpiresHours] = useState('72')
+  const [maxUses, setMaxUses] = useState('')
   const [created, setCreated] = useState<AccessLink | null>(null)
   const [copied, setCopied] = useState(false)
 
   const mut = useMutation({
     mutationFn: () =>
       createAccessLink({
-        description: description.trim(),
-        expires_in_hours: expiresHours ? Number(expiresHours) : null,
+        label: label.trim() || undefined,
+        expires_in_hours: expiresHours ? Number(expiresHours) : undefined,
+        max_uses: maxUses ? Number(maxUses) : undefined,
       }),
     onSuccess: (link) => {
       setCreated(link)
@@ -47,11 +49,10 @@ export function CreateLinkModal({ onClose }: CreateLinkModalProps) {
         transition={{ duration: 0.18 }}
         className="w-full max-w-md bg-bg-card border border-border rounded-2xl shadow-card overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Link className="w-4 h-4 text-accent-cyan" />
-            <span className="text-text-primary font-semibold text-sm">Create Access Link</span>
+            <span className="text-text-primary font-semibold text-sm">Generate New Link</span>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
@@ -61,20 +62,27 @@ export function CreateLinkModal({ onClose }: CreateLinkModalProps) {
         <div className="p-6 space-y-4">
           <AnimatePresence mode="wait">
             {created ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
+              <motion.div key="success" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                 <div className="flex items-center gap-2 text-emerald-400">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span className="font-mono text-sm font-medium">Link created successfully</span>
+                  <span className="font-mono text-sm font-medium">Link generated</span>
                 </div>
+
                 <div className="bg-bg-elevated border border-border rounded-lg p-4 space-y-2">
-                  <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest">Access URL</p>
-                  <p className="font-mono text-accent-cyan text-xs break-all">{created.access_url}</p>
+                  <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest">Access URL — share this link</p>
+                  <input
+                    readOnly
+                    value={created.access_url}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2
+                      font-mono text-accent-cyan text-xs focus:outline-none focus:border-accent-cyan/50"
+                  />
+                  <p className="text-text-muted text-[10px]">
+                    Anyone with this link can access the platform
+                    {created.max_uses ? ` (up to ${created.max_uses} times)` : ''}.
+                  </p>
                 </div>
+
                 <button
                   onClick={copyUrl}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg
@@ -95,43 +103,57 @@ export function CreateLinkModal({ onClose }: CreateLinkModalProps) {
             ) : (
               <motion.div key="form" className="space-y-4">
                 {mut.isError && (
-                  <div className="bg-red-950/50 border border-red-700/50 rounded-lg px-4 py-2.5
-                    text-red-300 text-xs font-mono">
-                    {(mut.error as { message?: string })?.message ?? 'Failed to create link.'}
+                  <div className="bg-red-950/50 border border-red-700/50 rounded-lg px-4 py-2.5 text-red-300 text-xs font-mono">
+                    {(mut.error as { message?: string })?.message ?? 'Failed to generate link.'}
                   </div>
                 )}
 
                 <div>
                   <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">
-                    Description
+                    Label <span className="text-text-muted normal-case tracking-normal">— optional</span>
                   </label>
                   <input
                     type="text"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="e.g. Researcher A access"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    placeholder="e.g. Research Partner – May 2026"
                     className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5
                       text-text-primary font-mono text-sm placeholder:text-text-muted
-                      focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30
-                      transition-colors"
+                      focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30 transition-colors"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">
-                    Expires In (hours) <span className="text-text-muted normal-case tracking-normal">— leave blank for no expiry</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={expiresHours}
-                    onChange={(e) => setExpiresHours(e.target.value)}
-                    placeholder="e.g. 720"
-                    className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5
-                      text-text-primary font-mono text-sm placeholder:text-text-muted
-                      focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30
-                      transition-colors"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">
+                      Expires In (hrs)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={expiresHours}
+                      onChange={(e) => setExpiresHours(e.target.value)}
+                      placeholder="72"
+                      className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5
+                        text-text-primary font-mono text-sm placeholder:text-text-muted
+                        focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">
+                      Max Uses
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={maxUses}
+                      onChange={(e) => setMaxUses(e.target.value)}
+                      placeholder="Unlimited"
+                      className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5
+                        text-text-primary font-mono text-sm placeholder:text-text-muted
+                        focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30 transition-colors"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-1">
@@ -144,16 +166,12 @@ export function CreateLinkModal({ onClose }: CreateLinkModalProps) {
                   </button>
                   <button
                     onClick={() => mut.mutate()}
-                    disabled={mut.isPending || !description.trim()}
+                    disabled={mut.isPending}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg
                       bg-accent-cyan text-bg-primary font-mono font-semibold text-sm
                       hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    {mut.isPending ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
-                    ) : (
-                      'Create Link'
-                    )}
+                    {mut.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
                   </button>
                 </div>
               </motion.div>

@@ -86,7 +86,7 @@ export function SmileInput({ addHistory }: SmileInputProps) {
           bg-accent-cyan text-bg-primary font-mono font-semibold text-sm
           hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed
           transition-all shadow-glow-cyan-sm hover:shadow-glow-cyan"
-        aria-label="Run hERG toxicity prediction"
+        aria-label="Run hERG cardio toxicity prediction"
       >
         {isLoading ? (
           <>
@@ -94,7 +94,7 @@ export function SmileInput({ addHistory }: SmileInputProps) {
             Predicting…
           </>
         ) : (
-          'Predict hERG Toxicity'
+          'Predict hERG Cardio Toxicity'
         )}
       </button>
     </form>

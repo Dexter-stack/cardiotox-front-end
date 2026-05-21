@@ -1,20 +1,24 @@
-// ─── Access-gate types ───────────────────────────────────────────────────────
+// ─── Access-gate ─────────────────────────────────────────────────────────────
+
+export type AccessDeniedReason = 'expired' | 'revoked' | 'not_found' | 'limit_reached'
 
 export interface AccessValidationResponse {
   valid: boolean
-  token: string
-  description?: string
-  expires_at?: string | null
+  label: string | null
+  expires_at: string | null
+  reason: AccessDeniedReason | null
 }
 
 // ─── Admin auth ───────────────────────────────────────────────────────────────
 
 export interface AdminInfo {
-  id: number
+  id: string
   username: string
   email: string
   is_superadmin: boolean
   is_active: boolean
+  created_at: string
+  created_by_id: string | null
 }
 
 export interface AdminLoginResponse {
@@ -26,34 +30,34 @@ export interface AdminLoginResponse {
 // ─── Access links ─────────────────────────────────────────────────────────────
 
 export interface AccessLink {
-  id: number
+  id: string
   token: string
-  description: string
   access_url: string
-  created_at: string
+  label: string | null
+  created_by_id: string
   expires_at: string | null
+  max_uses: number | null
+  uses_count: number
   is_active: boolean
-  usage_count: number
+  is_expired: boolean
+  created_at: string
+  last_accessed_at: string | null
 }
 
 export interface CreateLinkPayload {
-  description: string
-  expires_in_hours?: number | null
+  label?: string
+  expires_in_hours?: number
+  max_uses?: number
 }
 
-export interface ExtendLinkPayload {
-  expires_in_hours: number
+export interface EditLinkPayload {
+  label?: string
+  expires_in_hours?: number
+  max_uses?: number
+  is_active?: boolean
 }
 
 // ─── Admin management ─────────────────────────────────────────────────────────
-
-export interface Admin {
-  id: number
-  username: string
-  email: string
-  is_superadmin: boolean
-  is_active: boolean
-}
 
 export interface CreateAdminPayload {
   username: string

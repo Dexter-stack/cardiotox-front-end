@@ -10,9 +10,9 @@ interface CreateAdminModalProps {
 
 export function CreateAdminModal({ onClose }: CreateAdminModalProps) {
   const qc = useQueryClient()
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername]         = useState('')
+  const [email, setEmail]               = useState('')
+  const [password, setPassword]         = useState('')
   const [isSuperadmin, setIsSuperadmin] = useState(false)
 
   const mut = useMutation({
@@ -40,7 +40,7 @@ export function CreateAdminModal({ onClose }: CreateAdminModalProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-accent-cyan" />
-            <span className="text-text-primary font-semibold text-sm">Create Admin</span>
+            <span className="text-text-primary font-semibold text-sm">Add Admin</span>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
@@ -49,21 +49,18 @@ export function CreateAdminModal({ onClose }: CreateAdminModalProps) {
 
         <div className="p-6 space-y-4">
           {mut.isError && (
-            <div className="bg-red-950/50 border border-red-700/50 rounded-lg px-4 py-2.5
-              text-red-300 text-xs font-mono">
+            <div className="bg-red-950/50 border border-red-700/50 rounded-lg px-4 py-2.5 text-red-300 text-xs font-mono">
               {(mut.error as { message?: string })?.message ?? 'Failed to create admin.'}
             </div>
           )}
 
           {[
-            { label: 'Username', value: username, set: setUsername, type: 'text', placeholder: 'admin_user' },
-            { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'admin@example.com' },
-            { label: 'Password', value: password, set: setPassword, type: 'password', placeholder: '••••••••' },
+            { label: 'Username', value: username, set: setUsername, type: 'text',     placeholder: 'jane_doe'          },
+            { label: 'Email',    value: email,    set: setEmail,    type: 'email',    placeholder: 'jane@example.com'  },
+            { label: 'Password', value: password, set: setPassword, type: 'password', placeholder: '••••••••'          },
           ].map(({ label, value, set, type, placeholder }) => (
             <div key={label}>
-              <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">
-                {label}
-              </label>
+              <label className="block text-text-secondary text-xs font-mono uppercase tracking-widest mb-2">{label}</label>
               <input
                 type={type}
                 value={value}
@@ -71,8 +68,7 @@ export function CreateAdminModal({ onClose }: CreateAdminModalProps) {
                 placeholder={placeholder}
                 className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5
                   text-text-primary font-mono text-sm placeholder:text-text-muted
-                  focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30
-                  transition-colors"
+                  focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30 transition-colors"
               />
             </div>
           ))}
@@ -102,11 +98,7 @@ export function CreateAdminModal({ onClose }: CreateAdminModalProps) {
                 bg-accent-cyan text-bg-primary font-mono font-semibold text-sm
                 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {mut.isPending ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
-              ) : (
-                'Create Admin'
-              )}
+              {mut.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : 'Create Admin'}
             </button>
           </div>
         </div>

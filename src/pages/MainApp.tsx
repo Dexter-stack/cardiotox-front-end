@@ -1,9 +1,5 @@
-/**
- * MainApp — the protected main application page.
- * Checks localStorage for a valid access token; shows AccessGate if absent or invalid.
- */
-
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, type NavigateFunction } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BarChart2, Atom, Loader2 } from 'lucide-react'
 import { Header } from '../components/layout/Header'
@@ -17,14 +13,12 @@ import { RiskGauge } from '../components/visualization/RiskGauge'
 import { ShapPanel } from '../components/explainability/ShapPanel'
 import { HistoryPanel } from '../components/history/HistoryPanel'
 import { ExportButtons } from '../components/export/ExportButtons'
-import { AccessGate, ACCESS_TOKEN_KEY } from '../components/access/AccessGate'
 import { usePredictionStore } from '../store/predictionStore'
 import { useHistory } from '../hooks/useHistory'
-import { validateToken } from '../api/client'
+import { ACCESS_TOKEN_KEY } from './AccessRoute'
 import type { HistoryEntry } from '../types/prediction'
 
 type Tab = 'smiles' | 'name' | 'batch'
-type AuthState = 'checking' | 'granted' | 'denied'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'smiles', label: 'SMILES' },
@@ -42,9 +36,7 @@ function MoleculeArt() {
       <line x1="132" y1="74" x2="148" y2="82" stroke="#00d4ff" strokeWidth="1.5" />
       <line x1="100" y1="92" x2="100" y2="108" stroke="#00d4ff" strokeWidth="1.5" />
       <polygon points="100,108 132,126 132,144 100,144 68,144 68,126" fill="none" stroke="#00d4ff" strokeWidth="1" opacity="0.6" />
-      {[
-        [100, 4], [146, 30], [148, 82], [100, 108],
-      ].map(([x, y], i) => (
+      {([[100,4],[146,30],[148,82],[100,108]] as [number,number][]).map(([x,y],i) => (
         <circle key={i} cx={x} cy={y} r="3" fill="#00d4ff" />
       ))}
       <text x="96" y="2" fill="#00d4ff" fontSize="7" fontFamily="JetBrains Mono">OH</text>
@@ -54,37 +46,36 @@ function MoleculeArt() {
   )
 }
 
+function useAccessGuard(navigate: NavigateFunction) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY)
+    if (!token) {
+      navigate('/access/invalid', { replace: true })
+    } else {
+      setReady(true)
+    }
+  }, [navigate])
+  return ready
+}
+
 export function MainApp() {
+  const navigate = useNavigate()
+  const ready = useAccessGuard(navigate)
   const [activeTab, setActiveTab] = useState<Tab>('smiles')
-  const [authState, setAuthState] = useState<AuthState>('checking')
   const { currentPrediction } = usePredictionStore()
   const { history, addEntry, clearHistory, removeEntry } = useHistory()
-
-  useEffect(() => {
-    const stored = localStorage.getItem(ACCESS_TOKEN_KEY)
-    if (!stored) {
-      setAuthState('denied')
-      return
-    }
-    validateToken(stored)
-      .then((res) => setAuthState(res.valid ? 'granted' : 'denied'))
-      .catch(() => setAuthState('denied'))
-  }, [])
 
   const handleHistorySelect = (entry: HistoryEntry) => {
     usePredictionStore.getState().setPrediction(entry.response)
   }
 
-  if (authState === 'checking') {
+  if (!ready) {
     return (
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-accent-cyan animate-spin" />
       </div>
     )
-  }
-
-  if (authState === 'denied') {
-    return <AccessGate onSuccess={() => setAuthState('granted')} />
   }
 
   return (
@@ -96,9 +87,7 @@ export function MainApp() {
         <aside className="w-full md:w-[420px] md:min-w-[420px] border-b md:border-b-0 md:border-r border-border
           bg-bg-secondary flex flex-col">
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* Input panel card */}
             <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-              {/* Tab bar */}
               <div className="flex border-b border-border">
                 {TABS.map((tab) => (
                   <button
@@ -111,14 +100,11 @@ export function MainApp() {
                       }`}
                     aria-selected={activeTab === tab.id}
                     role="tab"
-                    aria-controls={`panel-${tab.id}`}
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
-
-              {/* Tab panels */}
               <div className="p-4">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -127,18 +113,15 @@ export function MainApp() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
                     transition={{ duration: 0.18 }}
-                    id={`panel-${activeTab}`}
-                    role="tabpanel"
                   >
                     {activeTab === 'smiles' && <SmileInput addHistory={addEntry} />}
-                    {activeTab === 'name' && <DrugNameInput addHistory={addEntry} />}
-                    {activeTab === 'batch' && <BatchUpload />}
+                    {activeTab === 'name'   && <DrugNameInput addHistory={addEntry} />}
+                    {activeTab === 'batch'  && <BatchUpload />}
                   </motion.div>
                 </AnimatePresence>
               </div>
             </div>
 
-            {/* History panel */}
             <HistoryPanel
               history={history}
               onSelect={handleHistorySelect}
@@ -148,7 +131,7 @@ export function MainApp() {
           </div>
         </aside>
 
-        {/* ── Right column: Results + Visualizations ─────────────── */}
+        {/* ── Right column: Results ─────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           <AnimatePresence mode="wait">
             {currentPrediction ? (
@@ -162,7 +145,6 @@ export function MainApp() {
               >
                 <PredictionCard prediction={currentPrediction} />
 
-                {/* Visualizations row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-2 bg-bg-card border border-border rounded-xl p-5">
                     <div className="flex items-center gap-2 mb-2">
@@ -179,7 +161,6 @@ export function MainApp() {
                     </div>
                   </div>
 
-                  {/* Gauge + processing info */}
                   <div className="bg-bg-card border border-border rounded-xl p-5 flex flex-col gap-5">
                     <div className="flex items-center gap-2">
                       <Atom className="w-4 h-4 text-accent-cyan" />
@@ -188,16 +169,10 @@ export function MainApp() {
                       </span>
                     </div>
                     <RiskGauge prediction={currentPrediction} />
-
-                    {/* Processing metadata */}
                     <div className="mt-auto pt-4 border-t border-border space-y-1.5">
                       <div className="flex justify-between text-xs font-mono">
                         <span className="text-text-muted">Processing time</span>
                         <span className="text-text-secondary">{currentPrediction.processing_time_ms.toFixed(1)} ms</span>
-                      </div>
-                      <div className="flex justify-between text-xs font-mono">
-                        <span className="text-text-muted">Model</span>
-                        <span className="text-text-secondary">XGBoost multi-label</span>
                       </div>
                       <div className="flex justify-between text-xs font-mono">
                         <span className="text-text-muted">Probabilities</span>
@@ -234,9 +209,7 @@ export function MainApp() {
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 text-xs font-mono text-text-muted">
                   {['≤1 µM', '≤5 µM', '≤10 µM', '≤30 µM'].map((t) => (
-                    <span key={t} className="px-3 py-1 rounded-full border border-border bg-bg-card">
-                      {t}
-                    </span>
+                    <span key={t} className="px-3 py-1 rounded-full border border-border bg-bg-card">{t}</span>
                   ))}
                 </div>
               </motion.div>

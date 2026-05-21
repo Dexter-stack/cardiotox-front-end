@@ -1,6 +1,6 @@
 /**
  * PredictionTable
- * Displays per-threshold hERG toxicity predictions.
+ * Displays per-threshold hERG cardio toxicity predictions.
  * Uses adjusted_probability (not the removed probability field).
  * Monotonicity warning removed — replaced by the header annotation.
  */

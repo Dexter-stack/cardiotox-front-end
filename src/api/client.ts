@@ -9,14 +9,15 @@ import type {
 } from '../types/prediction'
 import type { AccessValidationResponse } from '../types/access'
 
-// Axios instance — baseURL from env with localhost fallback
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000',
+  baseURL: BASE,
   timeout: 60_000,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Normalise error shape: FastAPI wraps errors in { detail: { ... } }
+// Normalise FastAPI error shape { detail: { ... } }
 api.interceptors.response.use(
   (res) => res,
   (err) => {

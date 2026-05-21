@@ -15,7 +15,7 @@ export function AdminsSection() {
   })
 
   const deactivateMut = useMutation({
-    mutationFn: (id: number) => deactivateAdmin(id),
+    mutationFn: (id: string) => deactivateAdmin(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-admins'] }),
   })
 

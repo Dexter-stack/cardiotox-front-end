@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
-import { adminLogin, ADMIN_JWT_KEY } from '../../api/adminClient'
+import { adminLogin, ADMIN_TOKEN_KEY } from '../../api/adminClient'
 
 export function AdminLogin() {
   const navigate = useNavigate()
@@ -19,10 +19,10 @@ export function AdminLogin() {
 
     try {
       const res = await adminLogin(username.trim(), password)
-      localStorage.setItem(ADMIN_JWT_KEY, res.access_token)
-      navigate('/admin/dashboard', { replace: true })
+      localStorage.setItem(ADMIN_TOKEN_KEY, res.access_token)
+      navigate('/admin', { replace: true })
     } catch (err) {
-      setError((err as { message?: string })?.message ?? 'Invalid credentials.')
+      setError((err as { message?: string })?.message ?? 'Incorrect username or password.')
     } finally {
       setLoading(false)
     }
@@ -31,7 +31,6 @@ export function AdminLogin() {
   return (
     <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl
             bg-violet-950/60 border border-violet-700/40 mb-4">
@@ -55,9 +54,7 @@ export function AdminLogin() {
 
           <div>
             <label htmlFor="admin-user" className="block text-text-secondary text-xs font-mono
-              uppercase tracking-widest mb-2">
-              Username
-            </label>
+              uppercase tracking-widest mb-2">Username</label>
             <input
               id="admin-user"
               type="text"
@@ -75,9 +72,7 @@ export function AdminLogin() {
 
           <div>
             <label htmlFor="admin-pass" className="block text-text-secondary text-xs font-mono
-              uppercase tracking-widest mb-2">
-              Password
-            </label>
+              uppercase tracking-widest mb-2">Password</label>
             <input
               id="admin-pass"
               type="password"
@@ -97,14 +92,12 @@ export function AdminLogin() {
             disabled={loading || !username.trim() || !password}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-lg
               bg-violet-600 text-white font-mono font-semibold text-sm
-              hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all"
+              hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
-            ) : (
-              <><ShieldCheck className="w-4 h-4" /> Sign In</>
-            )}
+            {loading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
+              : <><ShieldCheck className="w-4 h-4" /> Sign In</>
+            }
           </button>
         </form>
       </div>
