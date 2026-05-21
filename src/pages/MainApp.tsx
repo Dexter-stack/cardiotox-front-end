@@ -34,7 +34,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 function MoleculeArt() {
   return (
-    <svg width="200" height="160" viewBox="0 0 200 160" className="opacity-20" aria-hidden="true">
+    <svg viewBox="0 0 200 160" className="opacity-20 w-full max-w-[200px]" aria-hidden="true">
       <polygon points="100,20 132,38 132,74 100,92 68,74 68,38" fill="none" stroke="#00d4ff" strokeWidth="1.5" />
       <polygon points="100,32 122,44 122,68 100,80 78,68 78,44" fill="none" stroke="#00d4ff" strokeWidth="0.8" strokeDasharray="4 3" />
       <line x1="100" y1="20" x2="100" y2="4" stroke="#00d4ff" strokeWidth="1.5" />

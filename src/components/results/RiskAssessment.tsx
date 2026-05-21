@@ -24,7 +24,6 @@ interface RiskAssessmentProps {
 const TRACK_GRADIENT =
   'linear-gradient(90deg, #10b981 0%, #4ade80 18%, #eab308 35%, #f97316 60%, #ef4444 80%, #dc2626 100%)'
 
-// Animated numeric counter
 function AnimatedScore({ target }: { target: number }) {
   const motionVal = useMotionValue(0)
   const display = useTransform(motionVal, (v) => `${Math.round(v)}%`)
@@ -38,7 +37,6 @@ function AnimatedScore({ target }: { target: number }) {
     return ctrl.stop
   }, [target, motionVal])
 
-  // Subscribe to motion value changes and update DOM directly
   useEffect(() => {
     return display.on('change', (v) => {
       if (spanRef.current) spanRef.current.textContent = v
@@ -57,7 +55,7 @@ interface ThresholdPillProps {
 
 function ThresholdPill({ label, prediction, prob, color }: ThresholdPillProps) {
   return (
-    <div className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-lg bg-bg-elevated border border-border/60 min-w-[72px]">
+    <div className="flex flex-col items-center gap-1 px-2.5 sm:px-3 py-2.5 rounded-lg bg-bg-elevated border border-border/60 min-w-[60px] sm:min-w-[68px]">
       <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest leading-none">{label}</span>
       <span className={`text-[10px] font-mono font-bold mt-0.5 ${prediction ? 'text-red-400' : 'text-emerald-400'}`}>
         {prediction ? 'TOXIC' : 'SAFE'}
@@ -70,11 +68,9 @@ function ThresholdPill({ label, prediction, prob, color }: ThresholdPillProps) {
 }
 
 export function RiskAssessment({ prediction }: RiskAssessmentProps) {
-  // overall_risk_score is now 0–100 (e.g. 6.09 = 6.09 %)
   const score = prediction.overall_risk_score
   const scorePercent = Math.round(score)
 
-  // Derive the 4-tier label either from the API field or from the score
   const overallLabel: OverallRiskLabel =
     (['Low Risk', 'Moderate Risk', 'High Risk', 'Critical Risk'].includes(prediction.overall_risk_label)
       ? prediction.overall_risk_label
@@ -94,21 +90,21 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
     >
       {/* ── Top band ───────────────────────────────────────────────── */}
       <div
-        className="px-6 py-5 flex flex-wrap gap-4 items-center justify-between"
+        className="px-4 sm:px-6 py-4 sm:py-5 flex flex-wrap gap-3 sm:gap-4 items-center justify-between"
         style={{ background: `linear-gradient(135deg, ${accentColor}14 0%, ${accentColor}06 100%)` }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border"
             style={{ background: `${accentColor}18`, borderColor: `${accentColor}40`, boxShadow: `0 0 16px ${accentColor}25` }}
           >
-            <ShieldAlert className="w-6 h-6" style={{ color: accentColor }} />
+            <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: accentColor }} />
           </div>
           <div>
             <p className="text-text-muted text-[10px] font-mono uppercase tracking-[0.15em] mb-0.5">
               Overall Risk Assessment
             </p>
-            <p className={`text-2xl font-mono font-bold tracking-wider ${textClass}`}>
+            <p className={`text-lg sm:text-2xl font-mono font-bold tracking-wider ${textClass}`}>
               {overallLabel.toUpperCase()}
             </p>
           </div>
@@ -116,7 +112,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
 
         <div className="text-right">
           <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest mb-0.5">Risk Score</p>
-          <p className={`text-4xl font-mono font-bold tabular-nums ${textClass}`}>
+          <p className={`text-3xl sm:text-4xl font-mono font-bold tabular-nums ${textClass}`}>
             <AnimatedScore target={scorePercent} />
           </p>
         </div>
@@ -125,12 +121,9 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
       <div className="bg-bg-card divide-y divide-border/40">
 
         {/* ── Gradient score bar ─────────────────────────────────── */}
-        <div className="px-6 pt-4 pb-5">
+        <div className="px-4 sm:px-6 pt-4 pb-5">
           <div className="relative">
-            {/* Dimmed gradient track */}
             <div className="h-3 rounded-full" style={{ background: TRACK_GRADIENT, opacity: 0.22 }} />
-
-            {/* Filled overlay */}
             <div className="absolute inset-0 h-3 rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
@@ -140,13 +133,9 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
                 style={{ background: TRACK_GRADIENT, boxShadow: `0 0 10px ${accentColor}55` }}
               />
             </div>
-
-            {/* Zone separator ticks at 25 / 50 / 75 % */}
             {[25, 50, 75].map((pct) => (
               <div key={pct} className="absolute top-0 bottom-0 w-px bg-bg-primary/60" style={{ left: `${pct}%` }} />
             ))}
-
-            {/* Animated pointer dot */}
             <motion.div
               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-bg-primary z-10"
               initial={{ left: '0%' }}
@@ -164,7 +153,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
               { label: 'High',     color: '#f97316' },
               { label: 'Critical', color: '#dc2626' },
             ].map(({ label, color }) => (
-              <span key={label} className="text-[9px] font-mono font-medium tracking-wider uppercase" style={{ color }}>
+              <span key={label} className="text-[8px] sm:text-[9px] font-mono font-medium tracking-wider uppercase" style={{ color }}>
                 {label}
               </span>
             ))}
@@ -172,7 +161,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
         </div>
 
         {/* ── Scientific interpretation ──────────────────────────── */}
-        <div className="px-6 py-4 flex items-start gap-3">
+        <div className="px-4 sm:px-6 py-4 flex items-start gap-3">
           <Microscope className="w-4 h-4 text-text-muted shrink-0 mt-0.5" />
           <div>
             <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest mb-1.5">
@@ -183,7 +172,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
         </div>
 
         {/* ── Per-threshold mini summary ─────────────────────────── */}
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-3.5 h-3.5 text-text-muted" />
             <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest">Threshold Breakdown</p>
@@ -205,7 +194,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
 
             {/* Overall pill */}
             <div
-              className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-lg border min-w-[72px]"
+              className="flex flex-col items-center gap-1 px-2.5 sm:px-3 py-2.5 rounded-lg border min-w-[60px] sm:min-w-[68px]"
               style={{ background: `${accentColor}12`, borderColor: `${accentColor}35` }}
             >
               <span className="text-[9px] font-mono uppercase tracking-widest leading-none" style={{ color: accentColor }}>
@@ -222,20 +211,20 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
         </div>
 
         {/* ── Footer metadata ────────────────────────────────────── */}
-        <div className="px-6 py-2.5 bg-bg-elevated/30 flex items-center gap-4 flex-wrap">
+        <div className="px-4 sm:px-6 py-2.5 bg-bg-elevated/30 flex items-center gap-3 sm:gap-4 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Clock className="w-3 h-3 text-text-muted" />
             <span className="text-[10px] font-mono text-text-muted">
               Processed in <span className="text-text-secondary">{prediction.processing_time_ms.toFixed(1)} ms</span>
             </span>
           </div>
-          <span className="text-text-muted/40 text-xs">·</span>
-          <span className="text-[10px] font-mono text-text-muted">
+          <span className="text-text-muted/40 text-xs hidden sm:inline">·</span>
+          <span className="text-[10px] font-mono text-text-muted hidden sm:inline">
             Probabilities: <span className="text-accent-cyan">Threshold-adjusted</span>
           </span>
           {prediction.monotonicity_enforced && (
             <>
-              <span className="text-text-muted/40 text-xs">·</span>
+              <span className="text-text-muted/40 text-xs hidden sm:inline">·</span>
               <span className="text-[10px] font-mono text-text-muted">
                 Monotonicity: <span className="text-emerald-400">Enforced</span>
               </span>

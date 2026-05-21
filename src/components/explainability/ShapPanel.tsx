@@ -80,7 +80,7 @@ function ShapLabelChart({ label, explanation }: ShapLabelChartProps) {
           <YAxis
             type="category"
             dataKey="name"
-            width={60}
+            width={45}
             tick={{ fill: '#94a3b8', fontSize: 9, fontFamily: 'JetBrains Mono' }}
             axisLine={false}
             tickLine={false}
@@ -123,12 +123,12 @@ export function ShapPanel() {
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-bg-elevated/50 transition-colors"
         aria-expanded={open}
       >
-        <div className="flex items-center gap-2">
-          <Brain className="w-4 h-4 text-accent-cyan" />
+        <div className="flex items-center gap-2 min-w-0">
+          <Brain className="w-4 h-4 text-accent-cyan shrink-0" />
           <span className="text-text-primary text-sm font-medium">
-            AI Explanation — Key Molecular Features
+            AI Explanation
           </span>
-          <span className="text-text-muted text-xs font-mono">(SHAP TreeExplainer)</span>
+          <span className="text-text-muted text-xs font-mono hidden sm:inline">(SHAP TreeExplainer)</span>
         </div>
         {open ? (
           <ChevronUp className="w-4 h-4 text-text-secondary" />

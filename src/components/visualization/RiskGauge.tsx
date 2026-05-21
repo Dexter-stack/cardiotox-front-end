@@ -20,12 +20,11 @@ const RADIUS       = 45
 const CX           = 60
 const CY           = 60
 const STROKE_WIDTH = 10
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS // 282.74
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 export function RiskGauge({ prediction }: RiskGaugeProps) {
   const arcRef = useRef<SVGCircleElement>(null)
 
-  // Score is now 0-100; normalise to 0-1 for arc calculations
   const score       = prediction.overall_risk_score / 100
   const scorePercent = Math.round(prediction.overall_risk_score)
 
@@ -54,7 +53,12 @@ export function RiskGauge({ prediction }: RiskGaugeProps) {
         Overall Risk Score
       </p>
       <div className="flex flex-col items-center">
-        <svg width="120" height="70" viewBox="0 0 120 70" className="overflow-visible">
+        {/* viewBox keeps layout stable; CSS width makes it responsive */}
+        <svg
+          viewBox="0 0 120 70"
+          className="w-full max-w-[160px] overflow-visible"
+          aria-label={`Risk score ${scorePercent}%`}
+        >
           {/* Track arc */}
           <circle
             cx={CX} cy={CY} r={RADIUS}

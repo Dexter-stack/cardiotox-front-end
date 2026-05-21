@@ -49,18 +49,18 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
       className="space-y-4"
     >
       {/* ── Compound identity bar ────────────────────────────────── */}
-      <div className="bg-bg-card border border-border rounded-xl px-5 py-4">
-        <div className="flex flex-wrap gap-5 items-start">
+      <div className="bg-bg-card border border-border rounded-xl px-4 sm:px-5 py-4">
+        <div className="flex flex-wrap gap-4 sm:gap-5 items-start">
 
-          {/* Canonical SMILES */}
-          <div className="flex-1 min-w-0">
+          {/* Canonical SMILES — full width on mobile */}
+          <div className="w-full sm:flex-1 sm:min-w-0">
             <p className="text-text-muted text-[10px] font-mono uppercase tracking-[0.12em] mb-1
               flex items-center gap-1.5">
               <FlaskConical className="w-3 h-3 shrink-0" />
               Canonical SMILES
             </p>
             <p
-              className="font-mono text-accent-cyan text-sm truncate leading-snug"
+              className="font-mono text-accent-cyan text-xs sm:text-sm truncate leading-snug"
               title={prediction.canonical_smiles}
             >
               {prediction.canonical_smiles}
@@ -106,16 +106,16 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
           </div>
         </div>
 
-        {/* PubChem details row (drug name resolution only) */}
+        {/* PubChem details row */}
         {prediction.pubchem_cid && (
-          <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-4
+          <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-3
             text-xs font-mono text-text-secondary">
             <span>
               PubChem CID:{' '}
               <span className="text-text-primary">{prediction.pubchem_cid}</span>
             </span>
             {prediction.resolved_smiles && (
-              <span className="truncate max-w-xs" title={prediction.resolved_smiles}>
+              <span className="truncate max-w-[180px] sm:max-w-xs" title={prediction.resolved_smiles}>
                 Resolved SMILES:{' '}
                 <span className="text-accent-cyan">{prediction.resolved_smiles.slice(0, 48)}…</span>
               </span>
@@ -124,7 +124,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
               href={`https://pubchem.ncbi.nlm.nih.gov/compound/${prediction.pubchem_cid}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-accent-cyan hover:text-cyan-300 transition-colors ml-auto"
+              className="flex items-center gap-1 text-accent-cyan hover:text-cyan-300 transition-colors sm:ml-auto"
               aria-label="Open on PubChem"
             >
               <ExternalLink className="w-3 h-3" />
@@ -135,7 +135,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
       </div>
 
       {/* ── Calibration strip ────────────────────────────────────── */}
-      <div className="bg-bg-card border border-border rounded-xl px-5 py-3 flex flex-wrap items-center gap-4">
+      <div className="bg-bg-card border border-border rounded-xl px-4 sm:px-5 py-3 flex flex-wrap items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-2">
           <span className="text-text-muted text-[10px] font-mono uppercase tracking-[0.12em]">
             Calibration
@@ -165,7 +165,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
           <button
             onClick={() => setModelInfoOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-5 py-3 hover:bg-bg-elevated/50 transition-colors"
+            className="w-full flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-bg-elevated/50 transition-colors"
             aria-expanded={modelInfoOpen}
           >
             <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
                 transition={{ duration: 0.22, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
-                <div className="px-5 pb-4 pt-1 border-t border-border/40 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-border/40 grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
                     <p className="text-text-muted text-[10px] font-mono uppercase tracking-[0.12em] mb-1">
                       Version

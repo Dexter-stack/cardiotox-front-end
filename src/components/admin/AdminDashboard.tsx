@@ -65,7 +65,7 @@ export function AdminDashboard() {
   if (!admin) return null
 
   return (
-    <div className="min-h-screen bg-bg-primary flex">
+    <div className="min-h-screen bg-bg-primary flex flex-col md:flex-row">
       <AdminSidebar
         active={section}
         onSelect={setSection}
@@ -73,7 +73,7 @@ export function AdminDashboard() {
         onLogout={() => navigate('/admin', { replace: true })}
       />
 
-      <main className="flex-1 overflow-y-auto p-6 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         {section === 'links' && <AccessLinksSection />}
         {section === 'admins' && admin.is_superadmin && <AdminsSection />}
         {section === 'admins' && !admin.is_superadmin && (
