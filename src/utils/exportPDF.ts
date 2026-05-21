@@ -1,0 +1,148 @@
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import type { PredictionResponse } from '../types/prediction'
+import { THRESHOLD_META } from '../types/prediction'
+import { OVERALL_INTERPRETATIONS, scoreToOverallLabel } from './riskColors'
+import type { OverallRiskLabel } from '../types/prediction'
+
+export function exportPredictionPDF(prediction: PredictionResponse): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 20
+
+  const overallLabel: OverallRiskLabel =
+    (['Low Risk', 'Moderate Risk', 'High Risk', 'Critical Risk'].includes(prediction.overall_risk_label)
+      ? prediction.overall_risk_label
+      : scoreToOverallLabel(prediction.overall_risk_score)) as OverallRiskLabel
+
+  const interpretation = OVERALL_INTERPRETATIONS[overallLabel]
+
+  // ── Header ────────────────────────────────────────────────────────────
+  doc.setFillColor(10, 14, 26)
+  doc.rect(0, 0, pageW, 35, 'F')
+
+  doc.setTextColor(0, 212, 255)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('hERG·Tox', margin, 16)
+
+  doc.setTextColor(241, 245, 249)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Cardiotoxicity Assessment Report', margin, 25)
+
+  doc.setTextColor(148, 163, 184)
+  doc.setFontSize(8)
+  doc.text(`Generated: ${new Date().toUTCString()}`, pageW - margin, 25, { align: 'right' })
+
+  // ── Compound info ─────────────────────────────────────────────────────
+  let y = 48
+  doc.setTextColor(0, 100, 150)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Compound Information', margin, y)
+  y += 6
+
+  doc.setDrawColor(0, 212, 255)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y, pageW - margin, y)
+  y += 8
+
+  const compInfo: [string, string][] = [
+    ['Canonical SMILES', prediction.canonical_smiles],
+    ['Molecular Formula', prediction.molecular_formula],
+    ['Molecular Weight', `${prediction.molecular_weight.toFixed(4)} g/mol`],
+    ['Input Source', prediction.resolved_from.replace('_', ' ')],
+    ['Processing Time', `${prediction.processing_time_ms.toFixed(1)} ms`],
+  ]
+
+  doc.setFontSize(9)
+  compInfo.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(80, 80, 100)
+    doc.text(`${label}:`, margin, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(20, 20, 40)
+    doc.text(String(value), margin + 45, y)
+    y += 6
+  })
+
+  y += 6
+
+  // ── Threshold table ───────────────────────────────────────────────────
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 100, 150)
+  doc.text('Threshold Predictions (Threshold-adjusted probabilities)', margin, y)
+  y += 4
+
+  const tableRows = THRESHOLD_META.map(({ key, display, micromolar }) => {
+    const r = prediction.predictions[key]
+    return [
+      display,
+      micromolar,
+      r?.prediction ? 'TOXIC' : 'NON-TOXIC',
+      r?.adjusted_probability != null ? (r.adjusted_probability * 100).toFixed(2) + '%' : '-',
+      r?.raw_probability != null      ? (r.raw_probability      * 100).toFixed(2) + '%' : '-',
+      r?.risk_level  ?? '-',
+      r?.confidence  ?? '-',
+    ]
+  })
+
+  autoTable(doc, {
+    startY: y + 2,
+    head: [['Threshold', 'IC50', 'Prediction', 'Adj. Prob', 'Raw Prob', 'Risk', 'Confidence']],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { fillColor: [10, 14, 26], textColor: [0, 212, 255], fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8, textColor: [20, 20, 40] },
+    alternateRowStyles: { fillColor: [245, 247, 252] },
+    columnStyles: { 2: { fontStyle: 'bold' } },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 2) {
+        const val = data.cell.text[0]
+        data.cell.styles.textColor = val === 'TOXIC' ? [220, 38, 38] : [16, 185, 129]
+      }
+    },
+  })
+
+  // ── Overall risk summary ──────────────────────────────────────────────
+  const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+
+  doc.setFillColor(10, 14, 26)
+  doc.roundedRect(margin, finalY, pageW - margin * 2, 34, 3, 3, 'F')
+
+  doc.setTextColor(0, 212, 255)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Overall Assessment', margin + 5, finalY + 8)
+
+  doc.setFontSize(13)
+  doc.setTextColor(241, 245, 249)
+  doc.text(prediction.overall_risk_label.toUpperCase(), margin + 5, finalY + 18)
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(148, 163, 184)
+  doc.text(`Risk Score: ${prediction.overall_risk_score.toFixed(2)}%`, margin + 5, finalY + 26)
+
+  doc.setFontSize(7.5)
+  doc.setTextColor(200, 210, 230)
+  const interLines = doc.splitTextToSize(interpretation, pageW - margin * 2 - 60)
+  doc.text(interLines, margin + 60, finalY + 12)
+
+  // ── Footer ────────────────────────────────────────────────────────────
+  const pageH = doc.internal.pageSize.getHeight()
+  doc.setFillColor(10, 14, 26)
+  doc.rect(0, pageH - 14, pageW, 14, 'F')
+  doc.setTextColor(148, 163, 184)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.text(
+    'Generated by hERG·Tox Prediction Platform — For Research Use Only',
+    pageW / 2, pageH - 6, { align: 'center' }
+  )
+
+  const slug = prediction.canonical_smiles.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_')
+  doc.save(`herg_report_${slug}_${Date.now()}.pdf`)
+}
