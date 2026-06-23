@@ -62,7 +62,8 @@ export interface PredictionResponse {
 // ─── Batch ───────────────────────────────────────────────────────────────────
 export interface BatchItem {
   id: string
-  smiles: string
+  smiles?: string
+  drug_name?: string
 }
 
 export interface BatchResultItem extends PredictionResponse {
