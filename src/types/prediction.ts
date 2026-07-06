@@ -1,13 +1,14 @@
-// ─── Core types — aligned to the current CardioToxAI API response schema ───
+// ─── Core types — aligned to the updated CardioToxAI API response schema ────
 
-export type RiskLevel          = 'Minimal' | 'Low' | 'Moderate' | 'High' | 'Very High'
-export type CalibrationMethod  = 'none' | 'isotonic_regression' | 'isotonic_sorted'
-export type Confidence    = 'High' | 'Medium' | 'Low'
-export type ThresholdLabel = 'tox_1' | 'tox_5' | 'tox_10' | 'tox_30'
-export type ResolvedFrom  = 'smiles_input' | 'drug_name' | 'batch'
-
-/** Score-based overall-risk tier derived from overall_risk_score (0–100) */
-export type OverallRiskLabel = 'Low Risk' | 'Moderate Risk' | 'High Risk' | 'Critical Risk'
+export type RiskLevel         = 'Minimal' | 'Low' | 'Moderate' | 'High' | 'Very High'
+export type CalibrationMethod = 'none' | 'isotonic_regression' | 'isotonic_sorted'
+export type ThresholdKey      = 'tox_1' | 'tox_5' | 'tox_10' | 'tox_30'
+/** Alias for ThresholdKey — used by ShapPanel */
+export type ThresholdLabel    = ThresholdKey
+export type ResolvedFrom      = 'smiles_input' | 'drug_name' | 'batch'
+export type OverallRiskLabel  = 'Low Risk' | 'Moderate Risk' | 'High Risk' | 'Critical Risk'
+// Kept for backward compat with riskColors.ts
+export type Confidence        = 'High' | 'Medium' | 'Low'
 
 export interface ModelMetadata {
   model_version: string
@@ -16,47 +17,45 @@ export interface ModelMetadata {
   fingerprint_size: number
 }
 
-// ─── Per-threshold prediction result ────────────────────────────────────────
-export interface PredictionResult {
-  /** True = compound predicted to block hERG at this threshold */
-  prediction: boolean
-  /** Raw XGBoost model output before monotonicity adjustment */
-  raw_probability: number
-  /** Probability after adjustment to ensure P increases with IC50 cutoff */
-  adjusted_probability: number
+// ─── Per-threshold prediction result (new schema) ────────────────────────────
+export interface ThresholdPrediction {
+  label: string
+  probability: number       // 0.0–1.0; display as × 100 %
+  prediction: boolean       // true = blocker at this threshold
   risk_level: RiskLevel
-  confidence: Confidence
-  /** Human-readable interpretation for this threshold */
-  interpretation?: string
 }
 
 // ─── Full prediction response ────────────────────────────────────────────────
 export interface PredictionResponse {
   success: boolean
+  drug_name: string | null
   input_smiles: string
-  resolved_from: ResolvedFrom
-  molecular_weight: number
-  molecular_formula: string
   canonical_smiles: string
-  predictions: Record<string, PredictionResult>
-  /** Overall risk tier label (e.g. "Low Risk", "High Risk") */
-  overall_risk_label: string
-  /** Overall risk score as a PERCENTAGE (0–100), e.g. 6.09 means 6.09 % */
+  molecular_formula: string
+  molecular_weight: number
+
+  predictions: Record<ThresholdKey, ThresholdPrediction>
+
+  /** 0–100 scale, already percentage — display as "18.3 / 100", NEVER × 100 */
   overall_risk_score: number
-  /** True when the backend had to adjust probabilities for monotonicity */
-  monotonicity_enforced?: boolean
-  /** Calibration method applied to raw probabilities */
-  calibration_method: CalibrationMethod
-  /** Magnitude of probability shift introduced by calibration (0 = none) */
+  /** 0.0–1.0 — use directly for gauge arc fill, no multiplication */
+  overall_risk_score_normalized: number
+  overall_risk_label: string
+  dominant_threshold: ThresholdKey | null
+
+  monotonicity_enforced: boolean
+  calibration_method: string
   calibration_distortion: number
-  /** Model fingerprint / version metadata — null if not returned by API */
-  model_metadata: ModelMetadata | null
+  low_confidence: boolean
+  confidence_warning: string | null
+  clinical_summary: string
   processing_time_ms: number
-  // Drug-name resolution extras
-  resolved_smiles?: string
+
+  // Legacy optional fields — old API responses stored in localStorage
+  resolved_from?: ResolvedFrom
+  model_metadata?: ModelMetadata | null
   pubchem_cid?: number
-  // Batch extras
-  compound_id?: string
+  resolved_smiles?: string
 }
 
 // ─── Batch ───────────────────────────────────────────────────────────────────
@@ -87,7 +86,7 @@ export interface ExplainResponse {
   success: boolean
   input_smiles: string
   prediction: PredictionResponse
-  shap_explanations: Record<ThresholdLabel, ShapValue[]> | null
+  shap_explanations: Record<ThresholdKey, ShapValue[]> | null
 }
 
 // ─── PubChem lookup ──────────────────────────────────────────────────────────
@@ -117,18 +116,18 @@ export interface HistoryEntry {
 
 // ─── Static threshold display metadata ───────────────────────────────────────
 export interface ThresholdMeta {
-  /** Key matching the API response predictions object */
-  key: string
-  label: ThresholdLabel
+  /** API key — matches prediction.predictions object keys */
+  key: ThresholdKey
+  /** Alias for key, kept for backward compat */
+  label: ThresholdKey
   display: string
   micromolar: string
-  /** Abbreviated label for compact displays */
   short: string
 }
 
 export const THRESHOLD_META: ThresholdMeta[] = [
-  { key: 'Strong blocker (≤1 µM)',     label: 'tox_1',  display: 'Strong Blocker',    micromolar: '≤1 µM',  short: '1 µM'  },
-  { key: 'Moderate blocker (≤5 µM)',   label: 'tox_5',  display: 'Moderate Blocker',  micromolar: '≤5 µM',  short: '5 µM'  },
-  { key: 'Weak blocker (≤10 µM)',      label: 'tox_10', display: 'Weak Blocker',      micromolar: '≤10 µM', short: '10 µM' },
-  { key: 'Very weak blocker (≤30 µM)', label: 'tox_30', display: 'Very Weak Blocker', micromolar: '≤30 µM', short: '30 µM' },
+  { key: 'tox_1',  label: 'tox_1',  display: 'Strong Blocker',   micromolar: '≤1 µM',  short: '1 µM'  },
+  { key: 'tox_5',  label: 'tox_5',  display: 'Moderate Blocker', micromolar: '≤5 µM',  short: '5 µM'  },
+  { key: 'tox_10', label: 'tox_10', display: 'Weak Blocker',      micromolar: '≤10 µM', short: '10 µM' },
+  { key: 'tox_30', label: 'tox_30', display: 'Very Weak Blocker', micromolar: '≤30 µM', short: '30 µM' },
 ]

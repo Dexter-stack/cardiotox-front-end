@@ -26,7 +26,6 @@ const TRACK_GRADIENT =
 
 function AnimatedScore({ target }: { target: number }) {
   const motionVal = useMotionValue(0)
-  const display = useTransform(motionVal, (v) => `${Math.round(v)}%`)
   const spanRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -34,16 +33,18 @@ function AnimatedScore({ target }: { target: number }) {
       duration: 1.1,
       ease: [0.25, 0.46, 0.45, 0.94],
     })
-    return ctrl.stop
+    const unsub = motionVal.on('change', (v) => {
+      if (spanRef.current) spanRef.current.textContent = v.toFixed(1)
+    })
+    return () => { ctrl.stop(); unsub() }
   }, [target, motionVal])
 
-  useEffect(() => {
-    return display.on('change', (v) => {
-      if (spanRef.current) spanRef.current.textContent = v
-    })
-  }, [display])
-
-  return <span ref={spanRef}>0%</span>
+  return (
+    <span className="flex items-baseline gap-1">
+      <span ref={spanRef}>0.0</span>
+      <span className="text-text-muted font-mono text-sm font-normal">/ 100</span>
+    </span>
+  )
 }
 
 interface ThresholdPillProps {
@@ -69,7 +70,6 @@ function ThresholdPill({ label, prediction, prob, color }: ThresholdPillProps) {
 
 export function RiskAssessment({ prediction }: RiskAssessmentProps) {
   const score = prediction.overall_risk_score
-  const scorePercent = Math.round(score)
 
   const overallLabel: OverallRiskLabel =
     (['Low Risk', 'Moderate Risk', 'High Risk', 'Critical Risk'].includes(prediction.overall_risk_label)
@@ -112,8 +112,8 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
 
         <div className="text-right">
           <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest mb-0.5">Risk Score</p>
-          <p className={`text-3xl sm:text-4xl font-mono font-bold tabular-nums ${textClass}`}>
-            <AnimatedScore target={scorePercent} />
+          <p className={`text-2xl sm:text-3xl font-mono font-bold tabular-nums ${textClass}`}>
+            <AnimatedScore target={score} />
           </p>
         </div>
       </div>
@@ -128,7 +128,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
               <motion.div
                 className="h-full rounded-full"
                 initial={{ width: 0 }}
-                animate={{ width: `${scorePercent}%` }}
+                animate={{ width: `${score}%` }}
                 transition={{ duration: 1.0, delay: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                 style={{ background: TRACK_GRADIENT, boxShadow: `0 0 10px ${accentColor}55` }}
               />
@@ -139,7 +139,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
             <motion.div
               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-bg-primary z-10"
               initial={{ left: '0%' }}
-              animate={{ left: `${scorePercent}%` }}
+              animate={{ left: `${score}%` }}
               transition={{ duration: 1.0, delay: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
               style={{ background: accentColor, boxShadow: `0 0 10px ${accentColor}88` }}
             />
@@ -186,7 +186,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
                   key={key}
                   label={short}
                   prediction={r.prediction}
-                  prob={r.adjusted_probability}
+                  prob={r.probability}
                   color={RISK_COLORS[r.risk_level]}
                 />
               )
@@ -204,7 +204,7 @@ export function RiskAssessment({ prediction }: RiskAssessmentProps) {
                 {overallLabel.split(' ')[0].toUpperCase()}
               </span>
               <span className="font-mono text-[10px] tabular-nums" style={{ color: accentColor }}>
-                {scorePercent}%
+                {score}%
               </span>
             </div>
           </div>

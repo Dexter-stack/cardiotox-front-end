@@ -69,9 +69,11 @@ export function scoreToOverallLabel(score: number): OverallRiskLabel {
  */
 export function overallLabelToRiskLevel(label: string): RiskLevel {
   switch (label) {
+    case 'Minimal Risk':
     case 'Low Risk':      return 'Low'
     case 'Moderate Risk': return 'Moderate'
     case 'High Risk':     return 'High'
+    case 'Very High Risk':
     case 'Critical Risk': return 'Very High'
     default:              return 'Minimal'
   }

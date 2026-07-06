@@ -1,14 +1,19 @@
 /**
  * PredictionCard
- * compound identity bar → calibration strip → PredictionTable → RiskAssessment → Model Info
+ * compound identity bar → calibration strip → PredictionTable → RiskAssessment
+ * → ClinicalSummary → Model Info
  */
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FlaskConical, Scale, Dna, ExternalLink, ChevronDown, ChevronUp, Cpu } from 'lucide-react'
+import { FlaskConical, Scale, Dna, ExternalLink, ChevronDown, ChevronUp, Cpu, Tag } from 'lucide-react'
 import type { PredictionResponse, CalibrationMethod } from '../../types/prediction'
+import { THRESHOLD_META } from '../../types/prediction'
 import { PredictionTable } from './PredictionTable'
 import { RiskAssessment } from './RiskAssessment'
+import { ClinicalSummary } from './ClinicalSummary'
+import { CalibrationBadge } from './CalibrationBadge'
+import { getDominantThresholdLabel } from '../../utils/formatters'
 
 interface PredictionCardProps {
   prediction: PredictionResponse
@@ -32,13 +37,24 @@ const CALIBRATION_COLORS: Record<CalibrationMethod, string> = {
   isotonic_sorted:     'text-violet-300   border-violet-700/40   bg-violet-950/40',
 }
 
+const DOMINANT_COLOR: Record<string, string> = {
+  tox_1:  'text-red-300    border-red-700/40    bg-red-950/40',
+  tox_5:  'text-orange-300 border-orange-700/40 bg-orange-950/40',
+  tox_10: 'text-yellow-300 border-yellow-700/40 bg-yellow-950/40',
+  tox_30: 'text-lime-300   border-lime-700/40   bg-lime-950/40',
+}
+
 export function PredictionCard({ prediction }: PredictionCardProps) {
   const [modelInfoOpen, setModelInfoOpen] = useState(false)
-  const source = SOURCE_LABELS[prediction.resolved_from] ?? SOURCE_LABELS.smiles_input
 
-  const calibLabel = CALIBRATION_LABELS[prediction.calibration_method] ?? prediction.calibration_method
-  const calibColor = CALIBRATION_COLORS[prediction.calibration_method] ?? CALIBRATION_COLORS.none
+  const source = SOURCE_LABELS[prediction.resolved_from ?? ''] ?? SOURCE_LABELS.smiles_input
+  const calibLabel = CALIBRATION_LABELS[prediction.calibration_method as CalibrationMethod] ?? prediction.calibration_method
+  const calibColor = CALIBRATION_COLORS[prediction.calibration_method as CalibrationMethod] ?? CALIBRATION_COLORS.none
   const hasDistortion = prediction.calibration_distortion > 0
+
+  const dominantThreshold = prediction.dominant_threshold
+  const dominantLabel = dominantThreshold ? getDominantThresholdLabel(dominantThreshold) : null
+  const dominantMeta = dominantThreshold ? THRESHOLD_META.find((m) => m.key === dominantThreshold) : null
 
   return (
     <motion.div
@@ -51,6 +67,18 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
       {/* ── Compound identity bar ────────────────────────────────── */}
       <div className="bg-bg-card border border-border rounded-xl px-4 sm:px-5 py-4">
         <div className="flex flex-wrap gap-4 sm:gap-5 items-start">
+
+          {/* Drug name (if resolved from drug_name source) */}
+          {prediction.drug_name && (
+            <div className="w-full sm:w-auto shrink-0">
+              <p className="text-text-muted text-[10px] font-mono uppercase tracking-[0.12em] mb-1">
+                Drug Name
+              </p>
+              <p className="font-mono text-violet-300 text-sm font-medium leading-snug">
+                {prediction.drug_name}
+              </p>
+            </div>
+          )}
 
           {/* Canonical SMILES — full width on mobile */}
           <div className="w-full sm:flex-1 sm:min-w-0">
@@ -104,6 +132,24 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
               {source.label}
             </span>
           </div>
+
+          {/* Dominant threshold badge */}
+          {dominantThreshold && dominantMeta && (
+            <div className="shrink-0">
+              <p className="text-text-muted text-[10px] font-mono uppercase tracking-[0.12em] mb-1
+                flex items-center gap-1.5">
+                <Tag className="w-3 h-3 shrink-0" />
+                Dominant Threshold
+              </p>
+              <span
+                className={`inline-flex items-center rounded border px-2.5 py-0.5
+                  text-[10px] font-mono font-medium
+                  ${DOMINANT_COLOR[dominantThreshold] ?? 'text-text-secondary border-border bg-bg-elevated'}`}
+              >
+                {dominantLabel} · {dominantMeta.micromolar}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* PubChem details row */}
@@ -152,6 +198,10 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
             </span>
           </div>
         )}
+        {/* Calibration confidence badge */}
+        <div className="sm:ml-auto">
+          <CalibrationBadge prediction={prediction} />
+        </div>
       </div>
 
       {/* ── Per-threshold prediction table ───────────────────────── */}
@@ -159,6 +209,11 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
 
       {/* ── Overall risk assessment panel ────────────────────────── */}
       <RiskAssessment prediction={prediction} />
+
+      {/* ── Clinical interpretation ──────────────────────────────── */}
+      {prediction.clinical_summary && (
+        <ClinicalSummary prediction={prediction} />
+      )}
 
       {/* ── Model Info collapsible ───────────────────────────────── */}
       {prediction.model_metadata && (

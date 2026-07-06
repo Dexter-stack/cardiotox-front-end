@@ -22,11 +22,8 @@ export function exportSinglePredictionCSV(prediction: PredictionResponse): void 
       Threshold:          display,
       'IC50 Cutoff':      micromolar,
       Prediction:         result?.prediction ? 'TOXIC' : 'NON-TOXIC',
-      'Adj. Probability': result?.adjusted_probability.toFixed(6) ?? '',
-      'Raw Probability':  result?.raw_probability.toFixed(6) ?? '',
+      'Probability':      result != null ? (result.probability * 100).toFixed(2) + '%' : '',
       'Risk Level':       result?.risk_level ?? '',
-      Confidence:         result?.confidence ?? '',
-      Interpretation:     result?.interpretation ?? '',
     }
   })
 
@@ -37,12 +34,9 @@ export function exportSinglePredictionCSV(prediction: PredictionResponse): void 
     Threshold:          'OVERALL',
     'IC50 Cutoff':      '',
     Prediction:         prediction.overall_risk_label,
-    'Adj. Probability': (prediction.overall_risk_score / 100).toFixed(4),
-    'Raw Probability':  '',
+    'Probability':      (prediction.overall_risk_score / 100).toFixed(4),
     'Risk Level':       prediction.overall_risk_label,
-    Confidence:         '',
-    Interpretation:     '',
-  } as unknown as typeof rows[0])
+  } as typeof rows[0])
 
   const csv = Papa.unparse(rows)
   const slug = prediction.canonical_smiles.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_')
@@ -56,8 +50,8 @@ export function exportBatchCSV(results: BatchResultItem[]): void {
         ID: item.compound_id, SMILES: item.input_smiles,
         Error: item.error_code ?? 'UNKNOWN', Message: item.message ?? '',
         Threshold: '', 'IC50 Cutoff': '',
-        Prediction: '', 'Adj. Probability': '', 'Raw Probability': '',
-        'Risk Level': '', Confidence: '',
+        Prediction: '', 'Probability': '',
+        'Risk Level': '',
         'Overall Risk': '', 'Overall Score': '',
       }]
     }
@@ -65,18 +59,16 @@ export function exportBatchCSV(results: BatchResultItem[]): void {
     return THRESHOLD_META.map(({ key, display, micromolar }) => {
       const result = item.predictions[key]
       return {
-        ID:                 item.compound_id,
-        SMILES:             item.canonical_smiles,
+        ID:              item.compound_id,
+        SMILES:          item.canonical_smiles,
         Error: '', Message: '',
-        Threshold:          display,
-        'IC50 Cutoff':      micromolar,
-        Prediction:         result?.prediction ? 'TOXIC' : 'NON-TOXIC',
-        'Adj. Probability': result?.adjusted_probability.toFixed(6) ?? '',
-        'Raw Probability':  result?.raw_probability.toFixed(6) ?? '',
-        'Risk Level':       result?.risk_level ?? '',
-        Confidence:         result?.confidence ?? '',
-        'Overall Risk':     item.overall_risk_label,
-        'Overall Score':    `${item.overall_risk_score.toFixed(2)}%`,
+        Threshold:       display,
+        'IC50 Cutoff':   micromolar,
+        Prediction:      result?.prediction ? 'TOXIC' : 'NON-TOXIC',
+        'Probability':   result != null ? (result.probability * 100).toFixed(2) + '%' : '',
+        'Risk Level':    result?.risk_level ?? '',
+        'Overall Risk':  item.overall_risk_label,
+        'Overall Score': `${item.overall_risk_score.toFixed(2)} / 100`,
       }
     })
   })

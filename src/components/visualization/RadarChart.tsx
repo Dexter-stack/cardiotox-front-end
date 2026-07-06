@@ -22,7 +22,7 @@ function CustomTooltip({ active, payload }: TooltipProps<ValueType, NameType>) {
     <div className="bg-bg-card border border-border rounded-lg px-3 py-2 shadow-card text-xs font-mono">
       <p className="text-accent-cyan">{d.label}</p>
       <p className="text-text-secondary">
-        Adj. Probability: <span className="text-text-primary">{d.value.toFixed(4)}</span>
+        Probability: <span className="text-text-primary">{(d.value * 100).toFixed(1)}%</span>
       </p>
     </div>
   )
@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload }: TooltipProps<ValueType, NameType>) {
 export function RadarChartPanel({ prediction }: RadarChartProps) {
   const data = THRESHOLD_META.map(({ key, micromolar }) => ({
     label: micromolar,
-    value: prediction.predictions[key]?.adjusted_probability ?? 0,
+    value: prediction.predictions[key]?.probability ?? 0,
   }))
 
   return (

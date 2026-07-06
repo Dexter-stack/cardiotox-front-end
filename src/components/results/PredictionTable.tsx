@@ -1,19 +1,15 @@
 /**
  * PredictionTable
  * Displays per-threshold hERG cardio toxicity predictions.
- * Uses adjusted_probability (not the removed probability field).
- * Monotonicity warning removed — replaced by the header annotation.
+ * Uses probability (0–1) from new API schema.
  */
 
 import { motion } from 'framer-motion'
 import { Activity } from 'lucide-react'
 import type { PredictionResponse } from '../../types/prediction'
 import { THRESHOLD_META } from '../../types/prediction'
-import {
-  RISK_ROW_ACCENT,
-  CONFIDENCE_TEXT_CLASSES,
-  CONFIDENCE_DOT_CLASSES,
-} from '../../utils/riskColors'
+import { RISK_ROW_ACCENT } from '../../utils/riskColors'
+import { formatProbability } from '../../utils/formatters'
 import { RiskBadge } from './RiskBadge'
 import { ProbabilityBar } from './ProbabilityBar'
 import { Tooltip } from '../ui/Tooltip'
@@ -41,11 +37,12 @@ export function PredictionTable({ prediction }: PredictionTableProps) {
             maxWidth={290}
             content={
               <span>
-                Probabilities are adjusted to preserve{' '}
-                <span className="text-text-primary font-medium">biological consistency</span>{' '}
-                across increasing IC50 thresholds. Hover any{' '}
-                <span className="text-accent-cyan">Adj. Prob</span> ⓘ to compare the raw
-                model output.
+                Probabilities reflect hERG inhibition likelihood at each IC50 cutoff.
+                Values are calibrated using{' '}
+                <span className="text-text-primary font-medium">
+                  {prediction.calibration_method}
+                </span>{' '}
+                and adjusted for biological consistency.
               </span>
             }
           />
@@ -61,7 +58,7 @@ export function PredictionTable({ prediction }: PredictionTableProps) {
           style={{ minWidth: '520px' }}>
           <thead>
             <tr className="border-b border-border/70">
-              {['Threshold', 'IC50', 'Prediction', 'Adj. Prob', 'Risk Level', 'Confidence'].map((h) => (
+              {['Threshold', 'IC50', 'Prediction', 'Probability', 'Risk Level'].map((h) => (
                 <th
                   key={h}
                   scope="col"
@@ -118,11 +115,10 @@ export function PredictionTable({ prediction }: PredictionTableProps) {
                     </span>
                   </td>
 
-                  {/* Adjusted probability bar */}
+                  {/* Probability bar (probability is 0–1) */}
                   <td className="px-3 sm:px-4 py-3 sm:py-3.5 min-w-[160px] sm:min-w-[180px]">
                     <ProbabilityBar
-                      probability={result.adjusted_probability}
-                      rawProbability={result.raw_probability}
+                      probability={result.probability}
                       riskLevel={result.risk_level}
                       animationDelay={rowIndex * ROW_STAGGER + 0.15}
                     />
@@ -131,16 +127,6 @@ export function PredictionTable({ prediction }: PredictionTableProps) {
                   {/* Risk level badge */}
                   <td className="px-3 sm:px-4 py-3 sm:py-3.5 whitespace-nowrap">
                     <RiskBadge risk={result.risk_level} size="sm" dot />
-                  </td>
-
-                  {/* Confidence */}
-                  <td className="px-3 sm:px-4 py-3 sm:py-3.5 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT_CLASSES[result.confidence]}`} />
-                      <span className={`font-mono text-xs font-medium ${CONFIDENCE_TEXT_CLASSES[result.confidence]}`}>
-                        {result.confidence}
-                      </span>
-                    </div>
                   </td>
                 </motion.tr>
               )
@@ -152,7 +138,7 @@ export function PredictionTable({ prediction }: PredictionTableProps) {
       {/* ── Footer ───────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-5 py-2.5 bg-bg-elevated/30 border-t border-border/40">
         <span className="text-[10px] text-text-muted font-mono">
-          Decision threshold: 0.5 · Model: XGBoost multi-label ensemble
+          Decision boundary: 50% · Calibration: {prediction.calibration_method} · Model: XGBoost multi-label ensemble
         </span>
       </div>
     </div>

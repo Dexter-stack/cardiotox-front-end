@@ -52,7 +52,7 @@ export function exportPredictionPDF(prediction: PredictionResponse): void {
     ['Canonical SMILES', prediction.canonical_smiles],
     ['Molecular Formula', prediction.molecular_formula],
     ['Molecular Weight', `${prediction.molecular_weight.toFixed(4)} g/mol`],
-    ['Input Source', prediction.resolved_from.replace('_', ' ')],
+    ['Input Source', (prediction.resolved_from ?? '').replace('_', ' ')],
     ['Processing Time', `${prediction.processing_time_ms.toFixed(1)} ms`],
   ]
 
@@ -82,16 +82,14 @@ export function exportPredictionPDF(prediction: PredictionResponse): void {
       display,
       micromolar,
       r?.prediction ? 'TOXIC' : 'NON-TOXIC',
-      r?.adjusted_probability != null ? (r.adjusted_probability * 100).toFixed(2) + '%' : '-',
-      r?.raw_probability != null      ? (r.raw_probability      * 100).toFixed(2) + '%' : '-',
+      r?.probability != null ? (r.probability * 100).toFixed(2) + '%' : '-',
       r?.risk_level  ?? '-',
-      r?.confidence  ?? '-',
     ]
   })
 
   autoTable(doc, {
     startY: y + 2,
-    head: [['Threshold', 'IC50', 'Prediction', 'Adj. Prob', 'Raw Prob', 'Risk', 'Confidence']],
+    head: [['Threshold', 'IC50', 'Prediction', 'Probability', 'Risk']],
     body: tableRows,
     theme: 'grid',
     headStyles: { fillColor: [10, 14, 26], textColor: [0, 212, 255], fontStyle: 'bold', fontSize: 8 },
@@ -124,7 +122,7 @@ export function exportPredictionPDF(prediction: PredictionResponse): void {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(148, 163, 184)
-  doc.text(`Risk Score: ${prediction.overall_risk_score.toFixed(2)}%`, margin + 5, finalY + 26)
+  doc.text(`Risk Score: ${prediction.overall_risk_score.toFixed(2)} / 100`, margin + 5, finalY + 26)
 
   doc.setFontSize(7.5)
   doc.setTextColor(200, 210, 230)
