@@ -98,8 +98,8 @@ export function PredictionDetailDrawer({ prediction: p, onClose, onLabel }: Pred
             <span className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-mono border ${riskBadgeClass(p.overall_risk_label)}`}>
               {p.overall_risk_label}
             </span>
-            <span className={`font-mono font-bold text-xl ${probTextClass(p.overall_risk_score)}`}>
-              {(p.overall_risk_score * 100).toFixed(0)}%
+            <span className={`font-mono font-bold text-xl tabular-nums ${probTextClass(p.overall_risk_score / 100)}`}>
+              {p.overall_risk_score.toFixed(1)} <span className="text-text-muted text-sm font-normal">/ 100</span>
             </span>
             <span className="text-text-muted font-mono text-xs">overall risk score</span>
           </div>

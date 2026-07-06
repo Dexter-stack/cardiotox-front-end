@@ -224,8 +224,8 @@ export function PredictionsSection() {
                         {row.overall_risk_label}
                       </span>
                     </td>
-                    <td className={`px-3 py-3 font-mono text-xs font-medium ${probTextClass(row.overall_risk_score)}`}>
-                      {(row.overall_risk_score * 100).toFixed(0)}%
+                    <td className={`px-3 py-3 font-mono text-xs font-medium tabular-nums ${probTextClass(row.overall_risk_score / 100)}`}>
+                      {row.overall_risk_score.toFixed(1)}
                     </td>
                     <td className={`px-3 py-3 font-mono text-xs ${probTextClass(row.tox_1.probability)}`}>
                       {(row.tox_1.probability * 100).toFixed(0)}%
